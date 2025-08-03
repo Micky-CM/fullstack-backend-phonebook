@@ -68,7 +68,19 @@ app.delete('/api/persons/:id', (request, response) => {
 
 app.post('/api/persons', (request, response) => {
   const person = request.body
+  const nameExists = persons.some(p => p.name === person.name)
   const randomId = Math.floor(Math.random() * 1000)
+
+  if (!person.name || !person.number) {
+    return response.status(400).json({
+      error: 'name or number is missing'
+    })
+  }
+  if (nameExists) {
+    return response.status(400).json({
+      error: 'name must be unique'
+    })
+  }
 
   const newPerson = {
     id: randomId,
@@ -78,5 +90,5 @@ app.post('/api/persons', (request, response) => {
 
   persons = [...persons, newPerson]
 
-  response.json(newPerson)
+  response.status(201).json(newPerson)
 })
