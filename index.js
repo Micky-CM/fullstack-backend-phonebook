@@ -65,3 +65,18 @@ app.delete('/api/persons/:id', (request, response) => {
 
   response.status(204).end()
 })
+
+app.post('/api/persons', (request, response) => {
+  const person = request.body
+  const randomId = Math.floor(Math.random() * 1000)
+
+  const newPerson = {
+    id: randomId,
+    name: person.name,
+    number: person.number
+  }
+
+  persons = [...persons, newPerson]
+
+  response.json(newPerson)
+})
