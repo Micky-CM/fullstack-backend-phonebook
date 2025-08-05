@@ -80,7 +80,6 @@ out
 
 # Nuxt.js build / generate output
 .nuxt
-dist
 
 # Gatsby files
 .cache/
@@ -97,9 +96,6 @@ dist
 
 # Sveltekit cache directory
 .svelte-kit/
-
-# vitepress build output
-**/.vitepress/dist
 
 # vitepress cache directory
 **/.vitepress/cache
