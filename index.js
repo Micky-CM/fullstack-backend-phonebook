@@ -1,10 +1,20 @@
 require('dotenv').config()
 
 const express = require('express')
-const cors = require('cors')
-const morgan = require('morgan')
-
 const app = express()
+const morgan = require('morgan')
+const cors = require('cors')
+const mongoose = require('mongoose')
+const Person = require('./models/Person')
+
+mongoose.set('strictQuery', false)
+mongoose.connect(process.env.MONGODB_URI)
+  .then(() => {
+    console.log('Connected to MongoDB')
+  })
+  .catch(error => {
+    console.error('Error connecting to MongoDB:', error.message)
+  })
 
 app.use(cors())
 app.use(express.static('dist'))
@@ -15,7 +25,7 @@ morgan.token('body', (require, response) => {
 })
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms :body'))
 
-let persons = [
+/* let persons = [
     {
       "id": 1,
       "name": "Arto Hellas",
@@ -37,8 +47,9 @@ let persons = [
       "number": "39-23-6423122"
     }
 ]
+ */
 
-const PORT = process.env.PORT || 3001
+const PORT = process.env.PORT
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`)
 })
@@ -48,7 +59,9 @@ app.get('/', (request, response) => {
 })
 
 app.get('/api/persons', (request, response) => {
-  response.json(persons)
+  Person.find({}).then(persons => {
+    response.json(persons)
+  })
 })
 
 app.get('/info', (request, response) => {
@@ -61,29 +74,36 @@ app.get('/info', (request, response) => {
 })
 
 app.get('/api/persons/:id', (request, response) => {
-  const id = Number(request.params.id)
-  const person = persons.find(person => person.id === id)
-
-  if (person) {
-    response.json(person)
-  } else {
-    response.status(404).end()
-  }
+  Person.findById(request.params.id)
+    .then(person => {
+      if (person) {
+        response.json(person)
+      } else {
+        response.status(404).end()
+      }
+    })
+    .catch(error => {
+      console.log(error)
+      response.status(400).end()
+    })
 })
 
 app.delete('/api/persons/:id', (request, response) => {
-  const id = Number(request.params.id)
-  persons = persons.filter(person => person.id !== id)
-
-  response.status(204).end()
+  Person.findByIdAndDelete(request.params.id)
+  .then(response => {
+    response.status(204).end()
+  })
+  .catch(error => {
+    console.log(error)
+    response.status(400).end()
+  })
 })
 
 app.post('/api/persons', (request, response) => {
-  const person = request.body
-  const nameExists = persons.some(p => p.name === person.name)
-  const randomId = Math.floor(Math.random() * 1000)
+  const body = request.body
+  /* const nameExists = Person.findOne(body.name)
 
-  if (!person.name || !person.number) {
+  if (!body.name || !body.number) {
     return response.status(400).json({
       error: 'name or number is missing'
     })
@@ -92,15 +112,16 @@ app.post('/api/persons', (request, response) => {
     return response.status(400).json({
       error: 'name must be unique'
     })
-  }
+  } */
 
-  const newPerson = {
-    id: randomId,
-    name: person.name,
-    number: person.number
-  }
+  const newPerson = new Person({
+    name: body.name,
+    number: body.number
+  })
 
-  persons = [...persons, newPerson]
+  newPerson.save().then(savedPerson => {
+    response.json(savedPerson)
+  })
 
   response.status(201).json(newPerson)
 })
