@@ -65,12 +65,15 @@ app.get('/api/persons', (request, response) => {
 })
 
 app.get('/info', (request, response) => {
-  const contacts = persons.length
-  const date = new Date()
-  response.send(`
-    <p>Phonebook has info for ${contacts} people</p>
-    <p>${date}</p>
-  `)
+  Person.countDocuments({})
+    .then(count => {
+      const date = new Date()
+      response.send(`
+        <p>Phonebook has info for ${count} people</p>
+        <p>${date}</p>
+      `)
+    })
+    .catch(error => next(error))
 })
 
 app.get('/api/persons/:id', (request, response, next) => {
@@ -161,6 +164,6 @@ const errorHandler = (error, request, response, next) => {
   if (error.name === 'DocumentNotFoundError') {
     return response.status(404).send({ error: 'person not found'})
   }
-  next(error)
+  return response.status(500).json({ error: 'internal server error' })
 }
 app.use(errorHandler)
