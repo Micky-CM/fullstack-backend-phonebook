@@ -49,15 +49,6 @@ app.use(morgan(':method :url :status :res[content-length] - :response-time ms :b
 ]
  */
 
-const PORT = process.env.PORT
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`)
-})
-
-app.get('/', (request, response) => {
-  response.send('<h1>Phonebook Backend</h1>')
-})
-
 app.get('/api/persons', (request, response) => {
   Person.find({}).then(persons => {
     response.json(persons)
@@ -128,7 +119,7 @@ app.put('/api/persons/:id', (request, response, next) => {
     number: body.number
   }
 
-  Person.findByIdAndUpdate(request.params.id, updatedPerson, { new: true })
+  Person.findByIdAndUpdate(request.params.id, updatedPerson, { new: true, runValidators: true, context: 'query' })
     .then(result => {
       if (result) {
         response.json(result)
@@ -147,9 +138,8 @@ app.delete('/api/persons/:id', (request, response, next) => {
   .catch(error => next(error))
 })
 
-const unknownEndpoint = (request, response, next) => {
+const unknownEndpoint = (request, response) => {
   response.status(404).send({ error: 'unknown endpoint'})
-  next(error)
 }
 app.use(unknownEndpoint)
 
@@ -157,13 +147,16 @@ const errorHandler = (error, request, response, next) => {
   console.error(error.message)
   if (error.name === 'CastError') {
     return response.status(400).send({ error: 'malformatted id' })
-  }
-  if (error.name === 'ValidationError') {
-    return response.status(404).json({ error: error.message })
-  }
-  if (error.name === 'DocumentNotFoundError') {
+  } else if (error.name === 'ValidationError') {
+    return response.status(400).json({ error: error.message })
+  } else if (error.name === 'DocumentNotFoundError') {
     return response.status(404).send({ error: 'person not found'})
   }
   return response.status(500).json({ error: 'internal server error' })
 }
 app.use(errorHandler)
+
+const PORT = process.env.PORT
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`)
+})
