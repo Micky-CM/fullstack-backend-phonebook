@@ -55,7 +55,7 @@ app.get('/api/persons', (request, response) => {
   })
 })
 
-app.get('/info', (request, response) => {
+app.get('/info', (request, response, next) => {
   Person.countDocuments({})
     .then(count => {
       const date = new Date()
@@ -143,7 +143,7 @@ const unknownEndpoint = (request, response) => {
 }
 app.use(unknownEndpoint)
 
-const errorHandler = (error, request, response, next) => {
+const errorHandler = (error, request, response) => {
   console.error(error.message)
   if (error.name === 'CastError') {
     return response.status(400).send({ error: 'malformatted id' })
@@ -151,8 +151,9 @@ const errorHandler = (error, request, response, next) => {
     return response.status(400).json({ error: error.message })
   } else if (error.name === 'DocumentNotFoundError') {
     return response.status(404).send({ error: 'person not found'})
+  } else{
+    return response.status(500).json({ error: 'internal server error' })
   }
-  return response.status(500).json({ error: 'internal server error' })
 }
 app.use(errorHandler)
 
